@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Neon Runner</title>
+
+<style>
+
+* {
+  box-sizing: border-box;
+  user-select: none;
+}
+
+body {
+  margin: 0;
+  background: #070712;
+  color: white;
+  font-family: Arial, sans-serif;
+  text-align: center;
+  overflow: hidden;
+}
+
+h1 {
+  margin: 10px 0 4px;
+  font-size: 27px;
+  color: #00f7ff;
+  text-shadow: 0 0 12px #00f7ff;
+}
+
+#info {
+  font-size: 18px;
+  margin-bottom: 8px;
+}
+
+#game {
+  width: 360px;
+  height: 600px;
+  max-width: 94vw;
+  margin: auto;
+  position: relative;
+  overflow: hidden;
+
+  background:
+    linear-gradient(
+      90deg,
+      #101020 0%,
+      #15152b 49%,
+      #101020 50%,
+      #15152b 51%,
+      #101020 100%
+    );
+
+  border: 3px solid #00f7ff;
+  border-radius: 12px;
+  box-shadow: 0 0 25px #00f7ff;
+}
+
+/* خطوط الطريق */
+
+.line {
+  position: absolute;
+  width: 5px;
+  height: 80px;
+  left: 177px;
+  background: #00f7ff;
+  box-shadow: 0 0 12px #00f7ff;
+}
+
+/* اللاعب */
+
+#player {
+  position: absolute;
+  width: 48px;
+  height: 70px;
+  left: 156px;
+  bottom: 30px;
+
+  background: linear-gradient(#ff2b6d, #8b0035);
+
+  border: 2px solid white;
+  border-radius: 12px;
+
+  box-shadow: 0 0 20px #ff2b6d;
+}
+
+#player::before {
+  content: "";
+  position: absolute;
+
+  width: 24px;
+  height: 30px;
+
+  left: 10px;
+  top: 8px;
+
+  background: #181822;
+  border-radius: 6px;
+}
+
+/* العدو */
+
+.enemy {
+  position: absolute;
+
+  width: 48px;
+  height: 70px;
+
+  background: linear-gradient(#7d5cff, #260080);
+
+  border: 2px solid white;
+  border-radius: 12px;
+
+  box-shadow: 0 0 20px #7d5cff;
+}
+
+/* العملة */
+
+.coin {
+  position: absolute;
+
+  width: 28px;
+  height: 28px;
+
+  background: #ffe600;
+
+  border: 3px solid white;
+  border-radius: 50%;
+
+  box-shadow: 0 0 18px #ffe600;
+}
+
+/* الرسالة */
+
+#message {
+  margin: 8px;
+  min-height: 24px;
+  font-size: 17px;
+}
+
+/* الأزرار */
+
+button {
+  border: none;
+  border-radius: 10px;
+
+  padding: 10px 22px;
+
+  font-size: 18px;
+  font-weight: bold;
+
+  cursor: pointer;
+
+  background: #00f7ff;
+  color: #05050a;
+
+  box-shadow: 0 0 15px #00f7ff;
+}
+
+.controls {
+  margin-top: 5px;
+}
+
+.control {
+  width: 75px;
+  height: 45px;
+  margin: 3px;
+
+  padding: 4px;
+
+  font-size: 25px;
+}
+
+#startButton {
+  margin-top: 8px;
+}
+
+</style>
+</head>
+
+<body>
+
+<h1>⚡ NEON RUNNER ⚡</h1>
+
+<div id="info">
+النقاط: 0 | 🪙 0 | ❤️❤️❤️ | 🏆 0
+</div>
+
+<div id="game">
+
+  <div id="player"></div>
+
+  <div class="enemy" id="enemy"></div>
+
+  <div class="coin" id="coin"></div>
+
+  <div class="line" style="top:0"></div>
+  <div class="line" style="top:160px"></div>
+  <div class="line" style="top:320px"></div>
+  <div class="line" style="top:480px"></div>
+
+</div>
+
+<div id="message">
+اضغط ابدأ 🚀
+</div>
+
+<div class="controls">
+
+  <button class="control" onclick="moveLeft()">
+    ⬅️
+  </button>
+
+  <button class="control" onclick="moveRight()">
+    ➡️
+  </button>
+
+</div>
+
+<button id="startButton" onclick="startGame()">
+🚀 ابدأ اللعبة
+</button>
+
+<script>
+
+const player = document.getElementById("player");
+const enemy = document.getElementById("enemy");
+const coin = document.getElementById("coin");
+
+const info = document.getElementById("info");
+const message = document.getElementById("message");
+
+let playerX = 156;
+
+let enemyX = 100;
+let enemyY = -100;
+
+let coinX = 250;
+let coinY = -300;
+
+let score = 0;
+let coins = 0;
+let lives = 3;
+
+let speed = 4;
+
+let playing = false;
+
+let highScore =
+  Number(localStorage.getItem("neonHighScore")) || 0;
+
+
+/* اختيار مكان عشوائي */
+
+function randomX() {
+
+  return Math.floor(Math.random() * 312);
+
+}
+
+
+/* تحديث المعلومات */
+
+function updateInfo() {
+
+  let hearts = "";
+
+  for (let i = 0; i < lives; i++) {
+    hearts += "❤️";
+  }
+
+  info.textContent =
+    "النقاط: " +
+    score +
+    " | 🪙 " +
+    coins +
+    " | " +
+    hearts +
+    " | 🏆 " +
+    highScore;
+
+}
+
+
+/* تحريك اللاعب */
+
+function moveLeft() {
+
+  if (!playing) return;
+
+  playerX -= 30;
+
+  if (playerX < 0) {
+    playerX = 0;
+  }
+
+  player.style.left =
+    playerX + "px";
+
+}
+
+
+function moveRight() {
+
+  if (!playing) return;
+
+  playerX += 30;
+
+  if (playerX > 312) {
+    playerX = 312;
+  }
+
+  player.style.left =
+    playerX + "px";
+
+}
+
+
+/* لوحة المفاتيح */
+
+document.addEventListener("keydown", function(event) {
+
+  if (event.key === "ArrowLeft") {
+    moveLeft();
+  }
+
+  if (event.key === "ArrowRight") {
+    moveRight();
+  }
+
+});
+
+
+/* فحص الاصطدام */
+
+function hit(
+  ax, ay, aw, ah,
+  bx, by, bw, bh
+) {
+
+  return (
+
+    ax < bx + bw &&
+    ax + aw > bx &&
+    ay < by + bh &&
+    ay + ah > by
+
+  );
+
+}
+
+
+/* بداية اللعبة */
+
+function startGame() {
+
+  playerX = 156;
+
+  enemyY = -100;
+  coinY = -300;
+
+  enemyX = randomX();
+  coinX = randomX();
+
+  score = 0;
+  coins = 0;
+
+  lives = 3;
+
+  speed = 4;
+
+  playing = true;
+
+  player.style.left =
+    playerX + "px";
+
+  enemy.style.left =
+    enemyX + "px";
+
+  coin.style.left =
+    coinX + "px";
+
+  message.textContent =
+    "⬅️ ➡️ تفادى السيارات واجمع العملات!";
+
+  updateInfo();
+
+}
+
+
+/* إعادة اللعب */
+
+function restartGame() {
+
+  startGame();
+
+}
+
+
+/* اللعبة */
+
+function gameLoop() {
+
+  if (playing) {
+
+    enemyY += speed;
+    coinY += speed;
+
+    enemy.style.top =
+      enemyY + "px";
+
+    coin.style.top =
+      coinY + "px";
+
+
+    /* تجاوز العدو */
+
+    if (enemyY > 620) {
+
+      enemyY = -100;
+
+      enemyX = randomX();
+
+      enemy.style.left =
+        enemyX + "px";
+
+      score++;
+
+      /* زيادة السرعة */
+
+      if (score % 5 === 0) {
+
+        speed += 0.5;
+
+      }
+
+      updateInfo();
+
+    }
+
+
+    /* ظهور عملة جديدة */
+
+    if (coinY > 620) {
+
+      coinY =
+        -200 -
+        Math.random() * 250;
+
+      coinX =
+        randomX();
+
+      coin.style.left =
+        coinX + "px";
+
+    }
+
+
+    /* اصطدام اللاعب بالعدو */
+
+    if (
+
+      hit(
+        playerX,
+        500,
+        48,
+        70,
+
+        enemyX,
+        enemyY,
+        48,
+        70
+      )
+
+    ) {
+
+      lives--;
+
+      enemyY = -100;
+
+      enemyX = randomX();
+
+      enemy.style.left =
+        enemyX + "px";
+
+      updateInfo();
+
+
+      if (lives <= 0) {
+
+        playing = false;
+
+        if (score > highScore) {
+
+          highScore = score;
+
+          localStorage.setItem(
+            "neonHighScore",
+            highScore
+          );
+
+        }
+
+        message.textContent =
+          "💥 انتهت اللعبة! نتيجتك: " +
+          score;
+
+        updateInfo();
+
+      }
+
+    }
+
+
+    /* جمع العملة */
+
+    if (
+
+      hit(
+        playerX,
+        500,
+        48,
+        70,
+
+        coinX,
+        coinY,
+        28,
+        28
+      )
+
+    ) {
+
+      coins++;
+
+      score += 5;
+
+      coinY =
+        -200 -
+        Math.random() * 250;
+
+      coinX =
+        randomX();
+
+      coin.style.left =
+        coinX + "px";
+
+      updateInfo();
+
+    }
+
+  }
+
+  requestAnimationFrame(gameLoop);
+
+}
+
+
+/* تشغيل اللعبة */
+
+updateInfo();
+
+gameLoop();
+
+</script>
+
+</body>
+</html>
